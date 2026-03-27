@@ -4,6 +4,15 @@
 
 一个独立的 [Claude Code](https://claude.ai/code) Web 界面，可在任何现代浏览器中运行。claude-vs-ext-web 通过自定义 shim 层复用 VSCode Claude Code 扩展的 React 聊天 UI，并由 Node.js 后端通过 WebSocket 管理 `claude.exe` 进程。
 
+## 截图
+
+<table>
+  <tr>
+    <td><img src="readme-assets/mobile-project-list.png" alt="手机端项目列表" width="300"/></td>
+    <td><img src="readme-assets/mobile-chat-loaded.png" alt="手机端聊天界面" width="300"/></td>
+  </tr>
+</table>
+
 ## 工作原理
 
 ```mermaid

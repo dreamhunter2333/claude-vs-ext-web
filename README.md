@@ -4,6 +4,15 @@
 
 A standalone web interface for [Claude Code](https://claude.ai/code) that runs in any modern browser. claude-vs-ext-web reuses the official VSCode Claude Code extension's React chat UI through a custom shim layer, with a Node.js backend managing `claude.exe` processes via WebSocket.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="readme-assets/mobile-project-list.png" alt="Mobile Project List" width="300"/></td>
+    <td><img src="readme-assets/mobile-chat-loaded.png" alt="Mobile Chat Interface" width="300"/></td>
+  </tr>
+</table>
+
 ## How It Works
 
 ```mermaid
