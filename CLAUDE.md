@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**claude-vs-ext-web** is a web-based Claude Code interface. It bridges the VSCode Claude Code extension's React webview into a standalone browser-accessible application. The server spawns `claude.exe` processes and proxies communication between the browser and Claude via WebSocket.
+**claude-vs-ext-web** is a web-based Claude Code interface. It bridges the VSCode Claude Code extension's React webview into a standalone browser-accessible application. The server spawns `claude` binary (Windows: `claude.exe`, macOS: `claude`) and proxies communication between the browser and Claude via WebSocket.
 
 ## Commands
 
 - **`bun run dev`** — Start dev server with hot reload (`bun --watch src/server/index.ts`)
-- **`npm run build`** — TypeScript compile to `dist/`
+- **`bun run build`** — TypeScript compile to `dist/`
 - **`bun run start`** — Run server (`bun src/server/index.ts`)
 - **Kill stale process (Windows):** `netstat -ano | grep ":7860 " | grep LISTENING` to find PID, then `taskkill //PID <pid> //F`
+- **Kill stale process (macOS):** `lsof -ti:7860 | xargs kill -9`
 
 No test or lint commands are configured.
 
@@ -19,7 +20,7 @@ No test or lint commands are configured.
 
 ### Three-Layer Design
 
-1. **Express + WebSocket Server** (`src/server/`) — Serves pages, manages sessions, spawns `claude.exe`, routes messages
+1. **Express + WebSocket Server** (`src/server/`) — Serves pages, manages sessions, spawns `claude` binary, routes messages
 2. **Shim Layer** (`src/client/shim.js`) — Replaces VSCode's `acquireVsCodeApi()` with a WebSocket bridge so the unmodified extension webview works in a browser
 3. **VSCode Extension Webview** (`vendor/claude-code/webview/`) — The actual React chat UI, served as-is from the vendored extension
 
@@ -28,7 +29,7 @@ No test or lint commands are configured.
 - **`index.ts`** — Express app + WebSocket server. Routes: `/` (project list), `/chat?project=<base64>` (chat page with template injection), `/static/*` (client files), `/webview/*` + `/resources/*` (extension assets), `/api/*` (REST)
 - **`session-manager.ts`** — Manages `Session` objects (channelId, projectPath, ClaudeProcess, WebSocket connections, state, claudeConfig). Handles process lifecycle, message broadcasting to clients
 - **`message-handler.ts`** — Routes WebSocket messages by type: `launch_claude`, `io_message`, `interrupt_claude`, `close_channel`, `request`, `response`
-- **`claude-process.ts`** — Spawns `claude.exe` with `--output-format stream-json --input-format stream-json --verbose --allow-dangerously-skip-permissions --permission-prompt-tool stdio`. Parses newline-delimited JSON from stdout
+- **`claude-process.ts`** — Spawns `claude` binary with `--output-format stream-json --input-format stream-json --verbose --allow-dangerously-skip-permissions --permission-prompt-tool stdio`. Parses newline-delimited JSON from stdout
 - **`routes.ts`** — REST API: project discovery from `~/.claude/projects/` + manual config
 - **`config.ts`** — Reads `config.json` for port, project roots, defaults. Computes `extensionPath` and `claudeBinaryPath` from `vendor/claude-code/`
 
@@ -43,7 +44,7 @@ No test or lint commands are configured.
 
 `vendor/claude-code/` contains the extracted VSCode Claude Code extension (git-ignored). Key paths within:
 - `webview/index.js` + `index.css` — The React chat app
-- `resources/native-binary/claude.exe` — The Claude CLI binary
+- `resources/native-binary/claude.exe` (Windows) or `claude` (macOS) — The Claude CLI binary
 - `resources/` — SVGs, icons, welcome art
 
 ## Critical Protocol Details
