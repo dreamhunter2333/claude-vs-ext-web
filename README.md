@@ -126,9 +126,9 @@ vendor/claude-code/
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start with hot reload (`tsx watch`) |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm start` | Run compiled server |
+| `bun run dev` | Start with hot reload (`bun --watch`) |
+| `bun run build` | Compile TypeScript to `dist/` |
+| `bun run start` | Run compiled server |
 
 ## Configuration
 
@@ -210,7 +210,6 @@ The server communicates with `claude.exe` via stdin/stdout using newline-delimit
 <details>
 <summary><b>Known Limitations</b></summary>
 
-- **Windows only** — Uses `claude.exe` binary
 - **No SSL/TLS** — HTTP/WS only, not suitable for remote deployment without a reverse proxy
 - **No file operations** — File open/diff commands are stubbed
 - **No terminal integration** — Terminal commands return null

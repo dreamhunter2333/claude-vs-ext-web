@@ -126,9 +126,9 @@ vendor/claude-code/
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 热重载启动（`tsx watch`） |
-| `npm run build` | 编译 TypeScript 到 `dist/` |
-| `npm start` | 运行编译后的服务器 |
+| `bun run dev` | 热重载启动（`bun --watch`） |
+| `bun run build` | 编译 TypeScript 到 `dist/` |
+| `bun run start` | 运行编译后的服务器 |
 
 ## 配置
 
@@ -210,7 +210,6 @@ src/
 <details>
 <summary><b>已知限制</b></summary>
 
-- **仅限 Windows** — 使用 `claude.exe` 二进制文件
 - **无 SSL/TLS** — 仅支持 HTTP/WS，不适合无反向代理的远程部署
 - **无文件操作** — 文件打开/差异对比命令为存根
 - **无终端集成** — 终端命令返回 null
