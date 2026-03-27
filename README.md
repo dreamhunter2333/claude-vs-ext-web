@@ -78,6 +78,8 @@ bun run dev
 
 Extract the VSCode Claude Code extension into `vendor/claude-code/`:
 
+**Option 1: From installed extension**
+
 **Windows:**
 ```bash
 xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
@@ -86,6 +88,15 @@ xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\cl
 **macOS:**
 ```bash
 cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
+```
+
+**Option 2: From .vsix file**
+
+```bash
+# Extract .vsix (it's a zip file)
+unzip claude-code.vsix -d temp-extract
+mv temp-extract/extension/* vendor/claude-code/
+rm -rf temp-extract
 ```
 
 Required files: `webview/`, `resources/native-binary/`, `package.json`

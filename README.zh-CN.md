@@ -78,6 +78,8 @@ bun run dev
 
 将 VSCode Claude Code 扩展解压到 `vendor/claude-code/`：
 
+**方式 1：从已安装的扩展**
+
 **Windows:**
 ```bash
 xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
@@ -86,6 +88,15 @@ xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\cl
 **macOS:**
 ```bash
 cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
+```
+
+**方式 2：从 .vsix 文件**
+
+```bash
+# 解压 .vsix（本质是 zip 文件）
+unzip claude-code.vsix -d temp-extract
+mv temp-extract/extension/* vendor/claude-code/
+rm -rf temp-extract
 ```
 
 必需文件：`webview/`、`resources/native-binary/`、`package.json`
