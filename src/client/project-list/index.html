@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-180x180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/static/apple-touch-icon-76x76.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Claude Code">
+  <title>claude-vs-ext-web - 项目列表</title>
+  <link href="/static/css-variables.css" rel="stylesheet">
+  <link href="/static/project-list/styles.css" rel="stylesheet">
+  <script>
+    // Apply saved theme before first paint to avoid flash
+    (function() {
+      var saved = localStorage.getItem('web-cc-theme');
+      var cls = (saved === 'light') ? 'vscode-light' : 'vscode-dark';
+      document.documentElement.classList.add(cls);
+    })();
+  </script>
+</head>
+<body class="vscode-dark">
+  <div class="app">
+    <nav class="web-cc-nav">
+      <div class="web-cc-nav-left">
+        <img src="/resources/clawd.svg" alt="Claude" class="nav-logo">
+        <span class="nav-title">Web Claude Code</span>
+      </div>
+      <div class="web-cc-nav-right">
+        <button class="nav-theme-btn" onclick="toggleTheme()"><span class="theme-icon"></span></button>
+        <button class="nav-theme-btn" onclick="location.reload()" title="Reload">&#x21BB;</button>
+        <button id="addProjectBtn" class="nav-add-btn">+ Add Project</button>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <div class="main-content-inner">
+        <div id="projectGrid" class="project-grid">
+        <div class="loading">Loading projects...</div>
+      </div>
+      </div>
+    </div>
+
+    <!-- Add Project Modal -->
+    <div id="addModal" class="modal" style="display:none">
+      <div class="modal-content">
+        <h2>Add Project</h2>
+        <input id="projectPathInput" type="text" placeholder="D:/code/my-project" class="input">
+        <div class="modal-actions">
+          <button id="addCancelBtn" class="btn btn-secondary">Cancel</button>
+          <button id="addConfirmBtn" class="btn btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Apply saved theme to body
+    (function() {
+      var saved = localStorage.getItem('web-cc-theme');
+      if (saved === 'light') {
+        document.body.classList.remove('vscode-dark');
+        document.body.classList.add('vscode-light');
+      }
+    })();
+
+    function toggleTheme() {
+      var body = document.body;
+      if (body.classList.contains('vscode-dark')) {
+        body.classList.remove('vscode-dark');
+        body.classList.add('vscode-light');
+        document.documentElement.classList.remove('vscode-dark');
+        document.documentElement.classList.add('vscode-light');
+        localStorage.setItem('web-cc-theme', 'light');
+      } else {
+        body.classList.remove('vscode-light');
+        body.classList.add('vscode-dark');
+        document.documentElement.classList.remove('vscode-light');
+        document.documentElement.classList.add('vscode-dark');
+        localStorage.setItem('web-cc-theme', 'dark');
+      }
+    }
+  </script>
+  <script src="/static/project-list/index.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
+</body>
+</html>

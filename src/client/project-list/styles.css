@@ -1,0 +1,260 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-foreground, #cccccc);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Navigation bar - shared style with chat page */
+.web-cc-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--vscode-sideBar-background, #252526);
+  border-bottom: 1px solid var(--vscode-panel-border, #80808059);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.web-cc-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.web-cc-nav-left .nav-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+.web-cc-nav-left .nav-title {
+  color: var(--vscode-foreground, #cccccc);
+  font-weight: 500;
+  font-size: 13px;
+}
+.web-cc-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.web-cc-nav-right .nav-theme-btn,
+.web-cc-nav-right .nav-add-btn {
+  background: none;
+  border: 1px solid var(--vscode-button-secondaryBackground, #3a3d41);
+  color: var(--vscode-foreground, #cccccc);
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.web-cc-nav-right .nav-theme-btn:hover,
+.web-cc-nav-right .nav-add-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #45494e);
+}
+.theme-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(to right, currentColor 50%, transparent 50%);
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.main-content-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.project-card {
+  background: var(--vscode-sideBar-background, #252526);
+  border: 1px solid var(--vscode-panel-border, #333);
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.project-card:hover {
+  border-color: var(--vscode-focusBorder, #007acc);
+  background: var(--vscode-list-hoverBackground, #2a2d2e);
+}
+
+.project-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vscode-editor-foreground, #e0e0e0);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-path {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #888);
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+.project-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #666);
+  margin-bottom: 12px;
+}
+
+.project-sessions {
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.project-time {
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.project-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.badge-git {
+  background: #2d4a22;
+  color: #89d185;
+}
+
+.badge-claude {
+  background: #4a3522;
+  color: #d97757;
+}
+
+.vscode-light .badge-git {
+  background: #d6ecd0;
+  color: #388a34;
+}
+
+.vscode-light .badge-claude {
+  background: #f5e0d0;
+  color: #b35c37;
+}
+
+.loading {
+  text-align: center;
+  color: var(--vscode-descriptionForeground, #888);
+  padding: 40px;
+  grid-column: 1 / -1;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #fff);
+}
+
+.btn-primary:hover {
+  background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.btn-secondary {
+  background: var(--vscode-button-secondaryBackground, #3a3d41);
+  color: var(--vscode-button-secondaryForeground, #ccc);
+}
+
+.btn-secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #45494e);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: var(--vscode-editorWidget-background, #252526);
+  border: 1px solid var(--vscode-editorWidget-border, #454545);
+  border-radius: 8px;
+  padding: 24px;
+  width: 400px;
+}
+
+.modal-content h2 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--vscode-editor-foreground, #e0e0e0);
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--vscode-input-background, #3c3c3c);
+  border: 1px solid var(--vscode-input-border, #454545);
+  border-radius: 4px;
+  color: var(--vscode-input-foreground, #ccc);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  grid-column: 1 / -1;
+}
+
+.empty-state p {
+  color: var(--vscode-descriptionForeground, #888);
+  margin-bottom: 16px;
+}
