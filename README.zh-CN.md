@@ -60,6 +60,7 @@ graph TB
 - **平台支持**：
   - **Windows** — 使用 `claude.exe`
   - **macOS** — 使用 `claude` 二进制文件
+  - **Linux** — 使用 `claude` 二进制文件
 
 ## 快速开始
 

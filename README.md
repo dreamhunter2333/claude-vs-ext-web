@@ -60,6 +60,7 @@ graph TB
 - **Platform Support**:
   - **Windows** — Uses `claude.exe`
   - **macOS** — Uses `claude` binary
+  - **Linux** — Uses `claude` binary
 
 ## Quick Start
 
