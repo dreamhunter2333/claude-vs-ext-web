@@ -110,6 +110,18 @@ Required files: `webview/`, `resources/native-binary/`, `package.json`
 | `bun run build` | Compile TypeScript to `dist/` |
 | `bun run start` | Run compiled server |
 
+## Environment Variables
+
+If your `claude` binary requires environment variables (e.g., custom API endpoint), set them before starting the server:
+
+```bash
+export ANTHROPIC_BASE_URL="https://your-api-endpoint.com"
+export ANTHROPIC_AUTH_TOKEN="your-token"
+bun run start
+```
+
+These variables will be inherited by the spawned `claude` processes.
+
 ## Configuration
 
 `config.json` (auto-created if missing):

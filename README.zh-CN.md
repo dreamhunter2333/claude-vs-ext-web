@@ -110,6 +110,20 @@ rm -rf temp-extract
 | `bun run build` | 编译 TypeScript 到 `dist/` |
 | `bun run start` | 运行编译后的服务器 |
 
+## 环境变量
+
+如果你的 `claude` 二进制文件需要环境变量（例如自定义 API 端点），请在启动服务器前设置：
+
+```bash
+export ANTHROPIC_BASE_URL="https://your-api-endpoint.com"
+export ANTHROPIC_AUTH_TOKEN="your-token"
+bun run start
+```
+
+这些变量会被生成的 `claude` 进程继承。
+
+## 配置
+
 ## 配置
 
 `config.json`（缺失时自动创建）：
