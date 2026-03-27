@@ -6,30 +6,28 @@ A standalone web interface for [Claude Code](https://claude.ai/code) that runs i
 
 ## How It Works
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Browser                                                        │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  VSCode Extension Webview (React, unmodified)             │  │
-│  │  ┌─────────────────────────────────────────────────────┐  │  │
-│  │  │  shim.js — replaces acquireVsCodeApi() with WS      │  │  │
-│  │  └────────────────────────┬──────────────────────────┘  │  │
-│  └───────────────────────────┼──────────────────────────────┘  │
-└──────────────────────────────┼──────────────────────────────────┘
-                               │ WebSocket (/ws)
-┌──────────────────────────────┼──────────────────────────────────┐
-│  Node.js Server              │                                   │
-│  ┌───────────────────────────┼──────────────────────────────┐   │
-│  │  Express + WS Server      ▼                              │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │   │
-│  │  │ Routes (API) │  │ Msg Handler  │  │ Session Mgr   │  │   │
-│  │  └──────────────┘  └──────┬───────┘  └───────┬───────┘  │   │
-│  └───────────────────────────┼──────────────────┼───────────┘   │
-│                              │ stdin/stdout      │               │
-│                     ┌────────▼──────────────────▼────────┐      │
-│                     │  claude.exe (stream-json protocol)  │      │
-│                     └────────────────────────────────────┘      │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Browser
+        A[VSCode Extension Webview<br/>React, unmodified]
+        B[shim.js<br/>replaces acquireVsCodeApi with WS]
+        A --> B
+    end
+
+    subgraph "Node.js Server"
+        C[Express + WebSocket Server]
+        D[Routes API]
+        E[Message Handler]
+        F[Session Manager]
+        G[claude.exe<br/>stream-json protocol]
+
+        C --> D
+        C --> E
+        E --> F
+        F -->|stdin/stdout| G
+    end
+
+    B -->|WebSocket /ws| C
 ```
 
 **Key Insight**: Instead of rebuilding the chat UI from scratch, claude-vs-ext-web serves the extension's original webview files and injects a shim that replaces VSCode's `acquireVsCodeApi()` with a WebSocket bridge. The extension's React app works unmodified in the browser.
@@ -48,28 +46,32 @@ A standalone web interface for [Claude Code](https://claude.ai/code) that runs i
 
 ## Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 18+ or **Bun** 1.0+
 - **VSCode Claude Code Extension** — Extracted into `vendor/claude-code/`
-- **Windows** — Uses `claude.exe` (Windows-specific binary)
+- **Platform Support**:
+  - **Windows** — Uses `claude.exe`
+  - **macOS** — Uses `claude` binary
 
 ## Quick Start
 
 ```bash
 # 1. Install dependencies
-npm install
+bun install
 
 # 2. Set up the vendor directory (see below)
 # 3. Start the dev server
-npm run dev
+bun run dev
 
-# 4. Open http://localhost:3000
+# 4. Open http://localhost:7860
 ```
 
 ## Vendor Setup
 
 The `vendor/claude-code/` directory (git-ignored) must contain the extracted VSCode Claude Code extension.
 
-### Option A: Copy from installed extension
+### Windows
+
+#### Option A: Copy from installed extension
 
 ```bash
 # Find your extension path (example for v2.1.84):
@@ -78,11 +80,30 @@ The `vendor/claude-code/` directory (git-ignored) must contain the extracted VSC
 xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
 ```
 
-### Option B: Extract from .vsix file
+#### Option B: Extract from .vsix file
 
 ```bash
 # Rename .vsix to .zip and extract
 ren claude-code-*.vsix claude-code.zip
+tar -xf claude-code.zip -C vendor/claude-code/
+```
+
+### macOS
+
+#### Option A: Copy from installed extension
+
+```bash
+# Find your extension path (example for v2.1.84):
+# ~/.vscode/extensions/anthropic.claude-code-2.1.84-darwin-arm64/
+
+cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
+```
+
+#### Option B: Extract from .vsix file
+
+```bash
+# Rename .vsix to .zip and extract
+mv claude-code-*.vsix claude-code.zip
 unzip claude-code.zip -d vendor/claude-code/
 ```
 
@@ -115,29 +136,30 @@ vendor/claude-code/
 
 ```json
 {
-  "port": 3000,
+  "port": 7860,
   "projects": {
     "roots": [],
     "manual": [],
     "scanDepth": 1
   },
   "defaults": {
-    "permissionMode": "default",
-    "model": "sonnet"
+    "permissionMode": "bypassPermissions",
+    "model": "claude-opus-4-6[1m]"
   }
 }
 ```
 
 | Field | Description |
 |-------|-------------|
-| `port` | Server port (default: 3000) |
-| `projects.roots` | Directories to scan for projects |
+| `port` | Server port (default: 7860) |
+| `projects.roots` | Directories to scan for projects (not implemented yet) |
 | `projects.manual` | Manually added project paths |
-| `projects.scanDepth` | Recursion depth when scanning roots |
-| `defaults.permissionMode` | `default` / `always-allow` / `always-ask` |
-| `defaults.model` | Default Claude model |
+| `projects.scanDepth` | Recursion depth when scanning roots (not implemented yet) |
+| `defaults.permissionMode` | `default` / `bypassPermissions` / `always-ask` |
+| `defaults.model` | Default Claude model (e.g., `claude-opus-4-6[1m]`) |
 
-## Project Structure
+<details>
+<summary><b>Project Structure</b></summary>
 
 ```
 src/
@@ -155,7 +177,10 @@ src/
     └── project-list/       # Project selection page (vanilla JS)
 ```
 
-## Protocol Overview
+</details>
+
+<details>
+<summary><b>Protocol Overview</b></summary>
 
 ### WebSocket Messages
 
@@ -180,7 +205,10 @@ The server communicates with `claude.exe` via stdin/stdout using newline-delimit
 3. **Permissions** — `tool_permission_request` from claude.exe → transformed → webview → user approves → `tool_permission_response` → back to claude.exe
 4. **Interrupt** — `control_request{subtype:"interrupt"}` sent to stop generation
 
-## Known Limitations
+</details>
+
+<details>
+<summary><b>Known Limitations</b></summary>
 
 - **Windows only** — Uses `claude.exe` binary
 - **No SSL/TLS** — HTTP/WS only, not suitable for remote deployment without a reverse proxy
@@ -189,12 +217,15 @@ The server communicates with `claude.exe` via stdin/stdout using newline-delimit
 - **No MCP servers** — MCP server list returns empty stubs
 - **Slash command autocomplete** — Works with direct input only, not the `/` menu dropdown
 
-## Troubleshooting
+</details>
+
+<details>
+<summary><b>Troubleshooting</b></summary>
 
 ### Port already in use
 ```bash
-# Find and kill the process on port 3000 (Windows)
-netstat -ano | grep ":3000 " | grep LISTENING
+# Find and kill the process on port 7860 (Windows)
+netstat -ano | grep ":7860 " | grep LISTENING
 taskkill //PID <pid> //F
 ```
 
@@ -203,6 +234,8 @@ Ensure `claudeSettings.effective.permissions` is present in the init response. T
 
 ### `Uncaught (in promise)` errors in console
 These are normal — they come from the extension webview's internal promise handling and don't affect functionality.
+
+</details>
 
 ## License
 

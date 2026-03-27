@@ -6,30 +6,28 @@
 
 ## 工作原理
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  浏览器                                                         │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  VSCode 扩展 Webview (React，未修改)                       │  │
-│  │  ┌─────────────────────────────────────────────────────┐  │  │
-│  │  │  shim.js — 用 WebSocket 替换 acquireVsCodeApi()      │  │  │
-│  │  └────────────────────────┬──────────────────────────┘  │  │
-│  └───────────────────────────┼──────────────────────────────┘  │
-└──────────────────────────────┼──────────────────────────────────┘
-                               │ WebSocket (/ws)
-┌──────────────────────────────┼──────────────────────────────────┐
-│  Node.js 服务器               │                                  │
-│  ┌───────────────────────────┼──────────────────────────────┐   │
-│  │  Express + WS 服务器       ▼                              │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │   │
-│  │  │ Routes (API) │  │ 消息处理器    │  │ 会话管理器     │  │   │
-│  │  └──────────────┘  └──────┬───────┘  └───────┬───────┘  │   │
-│  └───────────────────────────┼──────────────────┼───────────┘   │
-│                              │ stdin/stdout      │               │
-│                     ┌────────▼──────────────────▼────────┐      │
-│                     │  claude.exe (stream-json 协议)       │      │
-│                     └────────────────────────────────────┘      │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph 浏览器
+        A[VSCode 扩展 Webview<br/>React，未修改]
+        B[shim.js<br/>用 WebSocket 替换 acquireVsCodeApi]
+        A --> B
+    end
+
+    subgraph "Node.js 服务器"
+        C[Express + WebSocket 服务器]
+        D[Routes API]
+        E[消息处理器]
+        F[会话管理器]
+        G[claude.exe<br/>stream-json 协议]
+
+        C --> D
+        C --> E
+        E --> F
+        F -->|stdin/stdout| G
+    end
+
+    B -->|WebSocket /ws| C
 ```
 
 **核心思路**：claude-vs-ext-web 不重新构建聊天 UI，而是直接提供扩展原始的 webview 文件，并注入一个 shim 层将 VSCode 的 `acquireVsCodeApi()` 替换为 WebSocket 桥接。扩展的 React 应用无需修改即可在浏览器中运行。
@@ -48,28 +46,32 @@
 
 ## 前置条件
 
-- **Node.js** 18+
+- **Node.js** 18+ 或 **Bun** 1.0+
 - **VSCode Claude Code 扩展** — 解压到 `vendor/claude-code/`
-- **Windows** — 使用 `claude.exe`（Windows 专用二进制文件）
+- **平台支持**：
+  - **Windows** — 使用 `claude.exe`
+  - **macOS** — 使用 `claude` 二进制文件
 
 ## 快速开始
 
 ```bash
 # 1. 安装依赖
-npm install
+bun install
 
 # 2. 设置 vendor 目录（见下文）
 # 3. 启动开发服务器
-npm run dev
+bun run dev
 
-# 4. 打开 http://localhost:3000
+# 4. 打开 http://localhost:7860
 ```
 
 ## Vendor 目录设置
 
 `vendor/claude-code/` 目录（git 忽略）必须包含解压的 VSCode Claude Code 扩展。
 
-### 方式 A：从已安装的扩展复制
+### Windows
+
+#### 方式 A：从已安装的扩展复制
 
 ```bash
 # 找到你的扩展路径（以 v2.1.84 为例）：
@@ -78,11 +80,30 @@ npm run dev
 xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
 ```
 
-### 方式 B：从 .vsix 文件解压
+#### 方式 B：从 .vsix 文件解压
 
 ```bash
 # 将 .vsix 重命名为 .zip 并解压
 ren claude-code-*.vsix claude-code.zip
+tar -xf claude-code.zip -C vendor/claude-code/
+```
+
+### macOS
+
+#### 方式 A：从已安装的扩展复制
+
+```bash
+# 找到你的扩展路径（以 v2.1.84 为例）：
+# ~/.vscode/extensions/anthropic.claude-code-2.1.84-darwin-arm64/
+
+cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
+```
+
+#### 方式 B：从 .vsix 文件解压
+
+```bash
+# 将 .vsix 重命名为 .zip 并解压
+mv claude-code-*.vsix claude-code.zip
 unzip claude-code.zip -d vendor/claude-code/
 ```
 
@@ -115,29 +136,30 @@ vendor/claude-code/
 
 ```json
 {
-  "port": 3000,
+  "port": 7860,
   "projects": {
     "roots": [],
     "manual": [],
     "scanDepth": 1
   },
   "defaults": {
-    "permissionMode": "default",
-    "model": "sonnet"
+    "permissionMode": "bypassPermissions",
+    "model": "claude-opus-4-6[1m]"
   }
 }
 ```
 
 | 字段 | 说明 |
 |------|------|
-| `port` | 服务器端口（默认：3000） |
-| `projects.roots` | 要扫描项目的目录列表 |
+| `port` | 服务器端口（默认：7860） |
+| `projects.roots` | 要扫描项目的目录列表（暂未实现） |
 | `projects.manual` | 手动添加的项目路径 |
-| `projects.scanDepth` | 扫描根目录时的递归深度 |
-| `defaults.permissionMode` | `default` / `always-allow` / `always-ask` |
-| `defaults.model` | 默认 Claude 模型 |
+| `projects.scanDepth` | 扫描根目录时的递归深度（暂未实现） |
+| `defaults.permissionMode` | `default` / `bypassPermissions` / `always-ask` |
+| `defaults.model` | 默认 Claude 模型（如 `claude-opus-4-6[1m]`） |
 
-## 项目结构
+<details>
+<summary><b>项目结构</b></summary>
 
 ```
 src/
@@ -155,7 +177,10 @@ src/
     └── project-list/       # 项目选择页面（原生 JS）
 ```
 
-## 协议概览
+</details>
+
+<details>
+<summary><b>协议概览</b></summary>
 
 ### WebSocket 消息
 
@@ -180,7 +205,10 @@ src/
 3. **权限** — `tool_permission_request` 从 claude.exe → 转换格式 → 发送到 webview → 用户审批 → `tool_permission_response` → 返回 claude.exe
 4. **中断** — 发送 `control_request{subtype:"interrupt"}` 停止生成
 
-## 已知限制
+</details>
+
+<details>
+<summary><b>已知限制</b></summary>
 
 - **仅限 Windows** — 使用 `claude.exe` 二进制文件
 - **无 SSL/TLS** — 仅支持 HTTP/WS，不适合无反向代理的远程部署
@@ -189,12 +217,15 @@ src/
 - **无 MCP 服务器** — MCP 服务器列表返回空存根
 - **斜杠命令自动补全** — 仅支持直接输入，不支持 `/` 菜单下拉
 
-## 故障排除
+</details>
+
+<details>
+<summary><b>故障排除</b></summary>
 
 ### 端口被占用
 ```bash
-# 查找并杀死占用 3000 端口的进程（Windows）
-netstat -ano | grep ":3000 " | grep LISTENING
+# 查找并杀死占用 7860 端口的进程（Windows）
+netstat -ano | grep ":7860 " | grep LISTENING
 taskkill //PID <pid> //F
 ```
 
@@ -203,6 +234,8 @@ taskkill //PID <pid> //F
 
 ### 控制台出现 `Uncaught (in promise)` 错误
 这是正常现象，来自扩展 webview 内部的 Promise 处理，不影响功能。
+
+</details>
 
 ## 许可证
 
