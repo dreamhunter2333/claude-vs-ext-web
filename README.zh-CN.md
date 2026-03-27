@@ -67,60 +67,19 @@ bun run dev
 
 ## Vendor 目录设置
 
-`vendor/claude-code/` 目录（git 忽略）必须包含解压的 VSCode Claude Code 扩展。
+将 VSCode Claude Code 扩展解压到 `vendor/claude-code/`：
 
-### Windows
-
-#### 方式 A：从已安装的扩展复制
-
+**Windows:**
 ```bash
-# 找到你的扩展路径（以 v2.1.84 为例）：
-# C:\Users\<用户名>\.vscode\extensions\anthropic.claude-code-2.1.84-win32-x64\
-
 xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
 ```
 
-#### 方式 B：从 .vsix 文件解压
-
+**macOS:**
 ```bash
-# 将 .vsix 重命名为 .zip 并解压
-ren claude-code-*.vsix claude-code.zip
-tar -xf claude-code.zip -C vendor/claude-code/
-```
-
-### macOS
-
-#### 方式 A：从已安装的扩展复制
-
-```bash
-# 找到你的扩展路径（以 v2.1.84 为例）：
-# ~/.vscode/extensions/anthropic.claude-code-2.1.84-darwin-arm64/
-
 cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
 ```
 
-#### 方式 B：从 .vsix 文件解压
-
-```bash
-# 将 .vsix 重命名为 .zip 并解压
-mv claude-code-*.vsix claude-code.zip
-unzip claude-code.zip -d vendor/claude-code/
-```
-
-### 必需的 vendor 文件
-
-```
-vendor/claude-code/
-├── webview/
-│   ├── index.js          # React 聊天应用（压缩版）
-│   └── index.css         # Webview 样式
-├── resources/
-│   ├── native-binary/
-│   │   └── claude.exe    # Claude CLI 二进制文件
-│   ├── clawd.svg         # Logo
-│   └── ...               # 图标、图片
-└── package.json          # 扩展清单
-```
+必需文件：`webview/`、`resources/native-binary/`、`package.json`
 
 ## 命令
 
