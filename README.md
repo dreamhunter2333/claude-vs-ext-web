@@ -67,60 +67,19 @@ bun run dev
 
 ## Vendor Setup
 
-The `vendor/claude-code/` directory (git-ignored) must contain the extracted VSCode Claude Code extension.
+Extract the VSCode Claude Code extension into `vendor/claude-code/`:
 
-### Windows
-
-#### Option A: Copy from installed extension
-
+**Windows:**
 ```bash
-# Find your extension path (example for v2.1.84):
-# C:\Users\<user>\.vscode\extensions\anthropic.claude-code-2.1.84-win32-x64\
-
 xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
 ```
 
-#### Option B: Extract from .vsix file
-
+**macOS:**
 ```bash
-# Rename .vsix to .zip and extract
-ren claude-code-*.vsix claude-code.zip
-tar -xf claude-code.zip -C vendor/claude-code/
-```
-
-### macOS
-
-#### Option A: Copy from installed extension
-
-```bash
-# Find your extension path (example for v2.1.84):
-# ~/.vscode/extensions/anthropic.claude-code-2.1.84-darwin-arm64/
-
 cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
 ```
 
-#### Option B: Extract from .vsix file
-
-```bash
-# Rename .vsix to .zip and extract
-mv claude-code-*.vsix claude-code.zip
-unzip claude-code.zip -d vendor/claude-code/
-```
-
-### Required vendor files
-
-```
-vendor/claude-code/
-├── webview/
-│   ├── index.js          # React chat app (minified)
-│   └── index.css         # Webview styles
-├── resources/
-│   ├── native-binary/
-│   │   └── claude.exe    # Claude CLI binary
-│   ├── clawd.svg         # Logo
-│   └── ...               # Icons, images
-└── package.json          # Extension manifest
-```
+Required files: `webview/`, `resources/native-binary/`, `package.json`
 
 ## Commands
 
