@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A standalone web interface for [Claude Code](https://claude.ai/code) that runs in any modern browser. claude-vs-ext-web reuses the official VSCode Claude Code extension's React chat UI through a custom shim layer, with a Node.js backend managing `claude.exe` processes via WebSocket.
+A standalone web interface for [Claude Code](https://claude.ai/code) that runs in any modern browser. claude-vs-ext-web reuses the official VSCode Claude Code extension's React chat UI through a custom shim layer, with a Node.js backend managing `claude` processes via WebSocket.
 
 ## Screenshots
 
@@ -28,7 +28,7 @@ graph TB
         D[Routes API]
         E[Message Handler]
         F[Session Manager]
-        G[claude.exe<br/>stream-json protocol]
+        G[claude binary<br/>stream-json protocol]
 
         C --> D
         C --> E
@@ -167,9 +167,9 @@ Required files: `webview/`, `resources/native-binary/`, `package.json`
 src/
 ├── server/
 │   ├── index.ts            # Express app, WebSocket, HTTP routes
-│   ├── session-manager.ts  # Session lifecycle, claude.exe process management
+│   ├── session-manager.ts  # Session lifecycle, claude process management
 │   ├── message-handler.ts  # WebSocket message routing & response building
-│   ├── claude-process.ts   # Spawns claude.exe, parses stream-json stdout
+│   ├── claude-process.ts   # Spawns claude binary, parses stream-json stdout
 │   ├── config.ts           # Config loading, vendor path resolution
 │   └── routes.ts           # REST API (/api/projects, /api/config)
 └── client/
@@ -198,13 +198,13 @@ src/
 { "type": "from-extension", "message": { "type": "io_message", "channelId": "uuid", ... } }
 ```
 
-### claude.exe Communication
+### Claude Binary Communication
 
-The server communicates with `claude.exe` via stdin/stdout using newline-delimited JSON (`stream-json` format). Key flows:
+The server communicates with the `claude` binary via stdin/stdout using newline-delimited JSON (`stream-json` format). Key flows:
 
 1. **Initialize** — Server sends `control_request{subtype:"initialize"}`, receives config (models, commands, agents)
 2. **Chat** — User messages forwarded as `io_message`, responses streamed back
-3. **Permissions** — `tool_permission_request` from claude.exe → transformed → webview → user approves → `tool_permission_response` → back to claude.exe
+3. **Permissions** — `tool_permission_request` from claude → transformed → webview → user approves → `tool_permission_response` → back to claude
 4. **Interrupt** — `control_request{subtype:"interrupt"}` sent to stop generation
 
 </details>

@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-一个独立的 [Claude Code](https://claude.ai/code) Web 界面，可在任何现代浏览器中运行。claude-vs-ext-web 通过自定义 shim 层复用 VSCode Claude Code 扩展的 React 聊天 UI，并由 Node.js 后端通过 WebSocket 管理 `claude.exe` 进程。
+一个独立的 [Claude Code](https://claude.ai/code) Web 界面，可在任何现代浏览器中运行。claude-vs-ext-web 通过自定义 shim 层复用 VSCode Claude Code 扩展的 React 聊天 UI，并由 Node.js 后端通过 WebSocket 管理 `claude` 进程。
 
 ## 截图
 
@@ -28,7 +28,7 @@ graph TB
         D[Routes API]
         E[消息处理器]
         F[会话管理器]
-        G[claude.exe<br/>stream-json 协议]
+        G[claude 二进制<br/>stream-json 协议]
 
         C --> D
         C --> E
@@ -167,9 +167,9 @@ grep '"version"' vendor/claude-code/package.json
 src/
 ├── server/
 │   ├── index.ts            # Express 应用、WebSocket、HTTP 路由
-│   ├── session-manager.ts  # 会话生命周期、claude.exe 进程管理
+│   ├── session-manager.ts  # 会话生命周期、claude 进程管理
 │   ├── message-handler.ts  # WebSocket 消息路由与响应构建
-│   ├── claude-process.ts   # 启动 claude.exe，解析 stream-json 输出
+│   ├── claude-process.ts   # 启动 claude 二进制，解析 stream-json 输出
 │   ├── config.ts           # 配置加载、vendor 路径解析
 │   └── routes.ts           # REST API（/api/projects, /api/config）
 └── client/
@@ -198,13 +198,13 @@ src/
 { "type": "from-extension", "message": { "type": "io_message", "channelId": "uuid", ... } }
 ```
 
-### claude.exe 通信
+### Claude 二进制通信
 
-服务器通过 stdin/stdout 使用换行分隔的 JSON（`stream-json` 格式）与 `claude.exe` 通信。关键流程：
+服务器通过 stdin/stdout 使用换行分隔的 JSON（`stream-json` 格式）与 `claude` 二进制通信。关键流程：
 
 1. **初始化** — 服务器发送 `control_request{subtype:"initialize"}`，接收配置（模型、命令、代理）
 2. **聊天** — 用户消息以 `io_message` 转发，响应流式返回
-3. **权限** — `tool_permission_request` 从 claude.exe → 转换格式 → 发送到 webview → 用户审批 → `tool_permission_response` → 返回 claude.exe
+3. **权限** — `tool_permission_request` 从 claude → 转换格式 → 发送到 webview → 用户审批 → `tool_permission_response` → 返回 claude
 4. **中断** — 发送 `control_request{subtype:"interrupt"}` 停止生成
 
 </details>
