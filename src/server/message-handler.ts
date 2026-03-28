@@ -67,6 +67,7 @@ export class MessageHandler {
       // Push current config so webview initializes properly
       if (existing.claudeConfig) {
         const initState = this.buildInitResponse(serverChannelId, cwd);
+        initState.state.initialPermissionMode = existing.permissionMode;
         ws.send(JSON.stringify({
           type: "from-extension",
           message: {
@@ -80,23 +81,21 @@ export class MessageHandler {
             },
           },
         }));
-
-        // Notify webview to use existing session's permissionMode
-        setTimeout(() => {
-          ws.send(JSON.stringify({
-            type: "from-extension",
-            message: {
-              type: "request",
-              channelId: serverChannelId,
-              requestId: uuid(),
-              request: {
-                type: "set_permission_mode",
-                mode: existing.permissionMode,
-              },
-            },
-          }));
-        }, 100);
       }
+
+      // Inject system/status io_message so webview's processMessage sets permissionMode.
+      // VENDOR DEPENDENCY: webview only reads permissionMode from system/status io_messages.
+      console.log(`[launch] injecting system/status permissionMode=${existing.permissionMode} for reattach`);
+      ws.send(JSON.stringify({
+        type: "from-extension",
+        message: {
+          type: "io_message",
+          channelId: serverChannelId,
+          message: { type: "system", subtype: "status", permissionMode: existing.permissionMode },
+          done: false,
+        },
+      }));
+
       return serverChannelId;
     }
 
@@ -114,49 +113,49 @@ export class MessageHandler {
       permissionMode: effectivePermissionMode,
       resume,
       thinkingLevel,
+      initialWs: ws,
     });
-    this.sessionManager.attachWs(channelId, ws);
+    // ws already attached via initialWs above
 
     // Once claude.exe config is available, push it to all connected clients via update_state.
     // Use broadcastToSession instead of the captured ws, because the original ws may have
     // closed and been replaced by a reconnect before the config resolves.
-    this.sessionManager.waitForClaudeConfig(session).then((config) => {
-      console.log(`[launch] waitForClaudeConfig resolved, config=${!!config}`);
-      if (config) {
-        const initState = this.buildInitResponse(channelId, cwd);
+    this.sessionManager.waitForClaudeConfig(session).then((claudeConfig) => {
+      console.log(`[launch] waitForClaudeConfig resolved, config=${!!claudeConfig}`);
+      // Always send update_state so the webview can initialize.
+      // If claude binary exited before returning config (e.g. resume session not found),
+      // use a minimal fallback config to unblock the webview from "Loading...".
+      const effectiveConfig = claudeConfig || { commands: [], models: [], agents: [] };
+      const initState = this.buildInitResponse(channelId, cwd);
+      initState.state.initialPermissionMode = effectivePermissionMode;
+      console.log(`[launch] update_state with initialPermissionMode=${effectivePermissionMode}, hasConfig=${!!claudeConfig}`);
+      this.sessionManager.broadcastToSession(channelId, {
+        type: "from-extension",
+        message: {
+          type: "request",
+          channelId,
+          requestId: uuid(),
+          request: {
+            type: "update_state",
+            state: initState.state,
+            config: effectiveConfig,
+          },
+        },
+      });
+
+      // VENDOR DEPENDENCY: webview only reads permissionMode from system/status io_messages.
+      // For resume sessions, inject one after update_state so the webview picks up the mode.
+      if (resume) {
+        console.log(`[launch] injecting system/status permissionMode=${effectivePermissionMode} for resume`);
         this.sessionManager.broadcastToSession(channelId, {
           type: "from-extension",
           message: {
-            type: "request",
+            type: "io_message",
             channelId,
-            requestId: uuid(),
-            request: {
-              type: "update_state",
-              state: initState.state,
-              config,
-            },
+            message: { type: "system", subtype: "status", permissionMode: effectivePermissionMode },
+            done: false,
           },
         });
-        console.log(`[launch] pushed update_state with config (${config.commands?.length || 0} commands) to webview`);
-
-        // If resume with effective permissionMode, notify webview
-        if (resume && effectivePermissionMode) {
-          setTimeout(() => {
-            console.log(`[launch] sending set_permission_mode to webview, mode=${effectivePermissionMode}`);
-            this.sessionManager.broadcastToSession(channelId, {
-              type: "from-extension",
-              message: {
-                type: "request",
-                channelId,
-                requestId: uuid(),
-                request: {
-                  type: "set_permission_mode",
-                  mode: effectivePermissionMode,
-                },
-              },
-            });
-          }, 100);
-        }
       }
     }).catch((err) => {
       console.error(`[launch] waitForClaudeConfig error:`, err);
@@ -195,7 +194,12 @@ export class MessageHandler {
 
     switch (request.type) {
       case "init":
-        respond(this.buildInitResponse(channelId, cwd));
+        const initResponse = this.buildInitResponse(channelId, cwd);
+        // Always use config defaults for initialPermissionMode
+        const config = getConfig();
+        initResponse.state.initialPermissionMode = config.defaults.permissionMode;
+        console.log(`[init] responding with initialPermissionMode=${initResponse.state.initialPermissionMode}`);
+        respond(initResponse);
         break;
       case "list_sessions_request": {
         const session = channelId ? this.sessionManager.getSession(channelId) : undefined;

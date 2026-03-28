@@ -29,7 +29,7 @@ export class SessionManager {
   createSession(
     channelId: string,
     projectPath: string,
-    options?: { model?: string; permissionMode?: string; resume?: string; thinkingLevel?: string }
+    options?: { model?: string; permissionMode?: string; resume?: string; thinkingLevel?: string; initialWs?: WebSocket }
   ): Session {
     // Defensive: destroy stale session with same channelId to prevent orphan processes
     const stale = this.sessions.get(channelId);
@@ -56,6 +56,14 @@ export class SessionManager {
       _pendingOutboundControl: new Map(),
       resumeId: options?.resume || undefined,
     };
+
+    // Register session and attach initial WS BEFORE spawning claude binary.
+    // If claude exits immediately (e.g. resume session not found), the result
+    // message must reach the webview — otherwise it stays stuck on "Loading...".
+    this.sessions.set(channelId, session);
+    if (options?.initialWs) {
+      session.wsConnections.add(options.initialWs);
+    }
 
     proc.spawn({
       cwd: projectPath,
@@ -132,11 +140,36 @@ export class SessionManager {
           type: "from-extension",
           message: { type: "io_message", channelId, message: msg, done: false },
         });
+
+        // After "system init", inject a "system status" message with permissionMode
+        // so the webview picks up the correct mode.
+        // VENDOR DEPENDENCY: webview processMessage only updates permissionMode from
+        // {type:"system", subtype:"status"} io_messages. If vendor webview updates,
+        // verify this injection path still works.
+        if (msg.type === "system" && msg.subtype === "init") {
+          console.log(`[claude:${channelId.slice(0, 8)}] injecting system/status with permissionMode=${session.permissionMode}`);
+          this.broadcast(session, {
+            type: "from-extension",
+            message: {
+              type: "io_message",
+              channelId,
+              message: { type: "system", subtype: "status", permissionMode: session.permissionMode },
+              done: false,
+            },
+          });
+        }
       }
     });
 
     proc.on("exit", (code: number | null) => {
       session.state = "closed";
+      // Resolve any pending claudeConfig waiters so they don't hang for 30s
+      if (session._claudeConfigResolvers.length > 0) {
+        for (const resolve of session._claudeConfigResolvers) {
+          resolve(null);
+        }
+        session._claudeConfigResolvers = [];
+      }
       this.broadcast(session, {
         type: "from-extension",
         message: {
@@ -152,7 +185,6 @@ export class SessionManager {
       console.error(`[claude:${channelId.slice(0, 8)}] ${line}`);
     });
 
-    this.sessions.set(channelId, session);
     return session;
   }
 

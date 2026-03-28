@@ -90,8 +90,12 @@
     }
 
     // Add resume parameter for launch_claude if session exists in URL
-    if (msg.type === 'launch_claude' && sessionId && !msg.resume) {
-      msg.resume = sessionId;
+    if (msg.type === 'launch_claude') {
+      if (sessionId && !msg.resume) {
+        msg.resume = sessionId;
+      }
+      // Override permissionMode from server config (default: bypassPermissions)
+      msg.permissionMode = config.permissionMode || 'bypassPermissions';
     }
 
     // Remap outbound channelId to server-side value

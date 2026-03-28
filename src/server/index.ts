@@ -87,6 +87,7 @@ app.get("/chat", (req, res) => {
   const wsProto = req.headers["x-forwarded-proto"] === "https" || req.protocol === "https" ? "wss" : "ws";
   const wsHost = (req.headers["x-forwarded-host"] as string) || req.headers.host || "localhost:7860";
   html = html.replace("{{WS_URL}}", `${wsProto}://${wsHost}/ws`);
+  html = html.replace("{{PERMISSION_MODE}}", config.defaults.permissionMode || "bypassPermissions");
   html = html.replaceAll("{{THEME_CLASS}}", themeClass);
   // Inject session ID from query param into #root data attribute for resume
   const sessionParam = req.query.session as string;
