@@ -2,11 +2,11 @@ import { WebSocket } from "ws";
 import { v4 as uuid } from "uuid";
 import { SessionManager } from "./session-manager.js";
 import { getConfig } from "./config.js";
-import { exec } from "child_process";
+import { execFile } from "child_process";
+import { readdir } from "fs/promises";
+import { join, relative } from "path";
 
 export class MessageHandler {
-  private pendingClaudeStateRequests: Array<{ ws: WebSocket; respond: (response: any) => void; cwd?: string }> = [];
-
   constructor(private sessionManager: SessionManager) {}
 
   handleInbound(ws: WebSocket, msg: any): string | undefined {
@@ -193,7 +193,7 @@ export class MessageHandler {
     };
 
     switch (request.type) {
-      case "init":
+      case "init": {
         const initResponse = this.buildInitResponse(channelId, cwd);
         // Always use config defaults for initialPermissionMode
         const config = getConfig();
@@ -201,6 +201,7 @@ export class MessageHandler {
         console.log(`[init] responding with initialPermissionMode=${initResponse.state.initialPermissionMode}`);
         respond(initResponse);
         break;
+      }
       case "list_sessions_request": {
         const session = channelId ? this.sessionManager.getSession(channelId) : undefined;
         const projectPath = session?.projectPath || request?.cwd || cwd || "";
@@ -260,9 +261,11 @@ export class MessageHandler {
       }
       case "open_url":
         if (request.url && /^https?:\/\//i.test(request.url)) {
-          const safeUrl = request.url.replace(/[&|;`$"'\\(){}]/g, "");
-          const cmd = process.platform === "win32" ? "start" : "open";
-          exec(`${cmd} "${safeUrl}"`);
+          if (process.platform === "win32") {
+            execFile("cmd", ["/c", "start", "", request.url]);
+          } else {
+            execFile("open", [request.url]);
+          }
         }
         respond({ type: "open_url_response", success: true });
         break;
@@ -295,9 +298,19 @@ export class MessageHandler {
       case "open_content":
       case "check_git_status":
       case "fork_conversation":
-      case "list_files_request":
         respond({ type: `${request.type}_response`, success: true });
         break;
+      case "list_files_request": {
+        const session = channelId ? this.sessionManager.getSession(channelId) : undefined;
+        const projectDir = session?.projectPath || cwd || process.cwd();
+        const pattern = request.pattern || "";
+        this.listProjectFiles(projectDir, pattern).then((files) => {
+          respond({ type: "list_files_request_response", files });
+        }).catch(() => {
+          respond({ type: "list_files_request_response", files: [] });
+        });
+        break;
+      }
       case "list_remote_sessions":
         respond({ type: "list_remote_sessions_response", sessions: [], });
         break;
@@ -424,5 +437,43 @@ export class MessageHandler {
         dark: "/resources/PlanMode.jpg",
       },
     };
+  }
+
+  private async listProjectFiles(
+    projectDir: string,
+    pattern: string,
+    maxDepth = 4,
+    maxFiles = 200
+  ): Promise<Array<{ path: string; name: string; type: "file" | "directory" }>> {
+    const results: Array<{ path: string; name: string; type: "file" | "directory" }> = [];
+    const ignoreDirs = new Set([
+      "node_modules", ".git", ".svn", ".hg", "dist", "build", ".next",
+      "__pycache__", ".venv", "venv", ".cache", "coverage",
+    ]);
+    const lowerPattern = pattern.toLowerCase();
+
+    const walk = async (dir: string, depth: number) => {
+      if (depth > maxDepth || results.length >= maxFiles) return;
+      let entries;
+      try {
+        entries = await readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const entry of entries) {
+        if (results.length >= maxFiles) break;
+        if (entry.name.startsWith(".") && entry.name !== ".claude") continue;
+        if (ignoreDirs.has(entry.name)) continue;
+        const relPath = relative(projectDir, join(dir, entry.name));
+        const isDir = entry.isDirectory();
+        if (!lowerPattern || entry.name.toLowerCase().includes(lowerPattern) || relPath.toLowerCase().includes(lowerPattern)) {
+          results.push({ path: relPath, name: entry.name, type: isDir ? "directory" : "file" });
+        }
+        if (isDir) await walk(join(dir, entry.name), depth + 1);
+      }
+    };
+
+    await walk(projectDir, 0);
+    return results;
   }
 }
