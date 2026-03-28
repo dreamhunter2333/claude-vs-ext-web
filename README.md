@@ -49,7 +49,7 @@ graph TB
 - **Permission Control** — Tool permission request/response flow with user approval
 - **Model Selection** — Switch between Claude models (Sonnet, Opus, etc.)
 - **Theme Switching** — GitHub Dark / GitHub Light themes, persisted in localStorage
-- **Multi-Session** — Each project gets its own isolated `claude.exe` process
+- **Multi-Session** — Each project gets its own isolated `claude` process
 - **Auto-Reconnect** — WebSocket reconnects automatically on disconnect (2s delay)
 - **Slash Commands** — Extension slash commands work via direct input
 
@@ -63,6 +63,13 @@ graph TB
   - **Linux** — Uses `claude` binary
 
 ## Quick Start
+
+If your `claude` binary requires environment variables (e.g., custom API endpoint), set them before starting the server. These variables will be inherited by the spawned `claude` processes.
+
+```bash
+export ANTHROPIC_BASE_URL="https://your-api-endpoint.com"
+export ANTHROPIC_AUTH_TOKEN="your-token"
+```
 
 ```bash
 # 1. Install dependencies
@@ -124,18 +131,6 @@ Required files: `webview/`, `resources/native-binary/`, `package.json`
 | `bun run dev` | Start with hot reload (`bun --watch`) |
 | `bun run build` | Compile TypeScript to `dist/` |
 | `bun run start` | Run compiled server |
-
-## Environment Variables
-
-If your `claude` binary requires environment variables (e.g., custom API endpoint), set them before starting the server:
-
-```bash
-export ANTHROPIC_BASE_URL="https://your-api-endpoint.com"
-export ANTHROPIC_AUTH_TOKEN="your-token"
-bun run start
-```
-
-These variables will be inherited by the spawned `claude` processes.
 
 ## Configuration
 

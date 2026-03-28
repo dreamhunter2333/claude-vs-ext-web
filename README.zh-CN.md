@@ -49,7 +49,7 @@ graph TB
 - **权限控制** — 工具权限请求/响应流程，支持用户审批
 - **模型选择** — 在 Claude 模型之间切换（Sonnet、Opus 等）
 - **主题切换** — GitHub Dark / GitHub Light 主题，通过 localStorage 持久化
-- **多会话** — 每个项目获得独立的 `claude.exe` 进程
+- **多会话** — 每个项目获得独立的 `claude` 进程
 - **自动重连** — WebSocket 断开后自动重连（延迟 2 秒）
 - **斜杠命令** — 扩展斜杠命令可通过直接输入使用
 
@@ -63,6 +63,13 @@ graph TB
   - **Linux** — 使用 `claude` 二进制文件
 
 ## 快速开始
+
+如果你的 `claude` 二进制文件需要环境变量（例如自定义 API 端点），请在启动服务器前设置。这些变量会被生成的 `claude` 进程继承。
+
+```bash
+export ANTHROPIC_BASE_URL="https://your-api-endpoint.com"
+export ANTHROPIC_AUTH_TOKEN="your-token"
+```
 
 ```bash
 # 1. 安装依赖
@@ -124,18 +131,6 @@ grep '"version"' vendor/claude-code/package.json
 | `bun run dev` | 热重载启动（`bun --watch`） |
 | `bun run build` | 编译 TypeScript 到 `dist/` |
 | `bun run start` | 运行编译后的服务器 |
-
-## 环境变量
-
-如果你的 `claude` 二进制文件需要环境变量（例如自定义 API 端点），请在启动服务器前设置：
-
-```bash
-export ANTHROPIC_BASE_URL="https://your-api-endpoint.com"
-export ANTHROPIC_AUTH_TOKEN="your-token"
-bun run start
-```
-
-这些变量会被生成的 `claude` 进程继承。
 
 ## 配置
 
