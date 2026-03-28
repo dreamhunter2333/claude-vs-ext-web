@@ -83,13 +83,19 @@ bun run dev
 
 **Windows:**
 ```bash
-xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
+# 列出可用版本，复制最新的
+dir "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*"
+xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-<VERSION>" vendor\claude-code\
 ```
 
-**macOS:**
+**macOS / Linux:**
 ```bash
-cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
+# 列出可用版本，复制最新的
+ls -d ~/.vscode/extensions/anthropic.claude-code-*
+cp -r ~/.vscode/extensions/anthropic.claude-code-<VERSION> vendor/claude-code/
 ```
+
+> 将 `<VERSION>` 替换为最新版本目录名（如 `2.1.86-darwin-arm64`）。
 
 **方式 2：从 .vsix 文件**
 
@@ -98,6 +104,15 @@ cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
 unzip claude-code.vsix -d temp-extract
 mv temp-extract/extension/* vendor/claude-code/
 rm -rf temp-extract
+```
+
+**更新 vendor 目录：**
+```bash
+# 删除旧版本并复制新版本
+rm -rf vendor/claude-code
+cp -r ~/.vscode/extensions/anthropic.claude-code-<VERSION> vendor/claude-code/
+# 验证版本
+grep '"version"' vendor/claude-code/package.json
 ```
 
 必需文件：`webview/`、`resources/native-binary/`、`package.json`
@@ -121,8 +136,6 @@ bun run start
 ```
 
 这些变量会被生成的 `claude` 进程继承。
-
-## 配置
 
 ## 配置
 

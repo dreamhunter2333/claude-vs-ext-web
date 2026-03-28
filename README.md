@@ -83,13 +83,19 @@ Extract the VSCode Claude Code extension into `vendor/claude-code/`:
 
 **Windows:**
 ```bash
-xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*" vendor\claude-code\
+# List available versions and copy the latest one
+dir "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*"
+xcopy /E /I "%USERPROFILE%\.vscode\extensions\anthropic.claude-code-<VERSION>" vendor\claude-code\
 ```
 
-**macOS:**
+**macOS / Linux:**
 ```bash
-cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
+# List available versions and copy the latest one
+ls -d ~/.vscode/extensions/anthropic.claude-code-*
+cp -r ~/.vscode/extensions/anthropic.claude-code-<VERSION> vendor/claude-code/
 ```
+
+> Replace `<VERSION>` with the latest version directory (e.g., `2.1.86-darwin-arm64`).
 
 **Option 2: From .vsix file**
 
@@ -98,6 +104,15 @@ cp -r ~/.vscode/extensions/anthropic.claude-code-* vendor/claude-code/
 unzip claude-code.vsix -d temp-extract
 mv temp-extract/extension/* vendor/claude-code/
 rm -rf temp-extract
+```
+
+**Updating the vendor directory:**
+```bash
+# Remove old vendor and copy the new version
+rm -rf vendor/claude-code
+cp -r ~/.vscode/extensions/anthropic.claude-code-<VERSION> vendor/claude-code/
+# Verify the version
+grep '"version"' vendor/claude-code/package.json
 ```
 
 Required files: `webview/`, `resources/native-binary/`, `package.json`
