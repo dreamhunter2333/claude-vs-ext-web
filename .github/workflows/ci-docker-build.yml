@@ -55,10 +55,22 @@ jobs:
           VSIX_BASE_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/anthropic/vsextensions/claude-code/${VSIX_VERSION}/vspackage"
           BINARY_DIR="vendor/claude-code/resources/native-binary"
 
+          # Helper: marketplace may return gzip-encoded VSIX, detect and decompress
+          download_vsix() {
+            local url="$1" output="$2"
+            curl --fail -L -o "$output" "$url"
+            # Check if file is gzip-compressed (not a valid zip)
+            if file "$output" | grep -q 'gzip'; then
+              echo "Detected gzip-compressed VSIX, decompressing..."
+              mv "$output" "${output}.gz"
+              gunzip "${output}.gz"
+            fi
+            ls -lh "$output"
+          }
+
           # Download linux-x64 VSIX first — use its webview/extension assets as the base
           echo "Downloading Claude Code VSIX v${VSIX_VERSION} (linux-x64)..."
-          curl --fail -L -o claude-code-linux-x64.vsix "${VSIX_BASE_URL}?targetPlatform=linux-x64"
-          ls -lh claude-code-linux-x64.vsix
+          download_vsix "${VSIX_BASE_URL}?targetPlatform=linux-x64" claude-code-linux-x64.vsix
 
           rm -rf vendor/claude-code
           mkdir -p vendor/claude-code
@@ -75,7 +87,7 @@ jobs:
 
           # Download linux-arm64 VSIX — only extract the binary
           echo "Downloading Claude Code VSIX v${VSIX_VERSION} (linux-arm64)..."
-          curl --fail -L -o claude-code-linux-arm64.vsix "${VSIX_BASE_URL}?targetPlatform=linux-arm64"
+          download_vsix "${VSIX_BASE_URL}?targetPlatform=linux-arm64" claude-code-linux-arm64.vsix
           unzip -q claude-code-linux-arm64.vsix -d temp-arm64
           cp temp-arm64/extension/resources/native-binary/claude "$BINARY_DIR/claude-arm64"
           chmod +x "$BINARY_DIR/claude-arm64"
