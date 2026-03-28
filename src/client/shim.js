@@ -14,6 +14,10 @@
   var config = window.WEB_CC_CONFIG || {};
   var wsUrl = config.wsUrl || "ws://" + location.host + "/ws";
 
+  // Extract session parameter from URL for resume
+  var urlParams = new URLSearchParams(window.location.search);
+  var sessionId = urlParams.get('session');
+
   var ws = null;
   var wsReady = false;
   var pendingMessages = [];
@@ -83,6 +87,11 @@
   function sendMessage(msg) {
     if (config.projectPath && !msg.cwd) {
       msg.cwd = config.projectPath;
+    }
+
+    // Add resume parameter for launch_claude if session exists in URL
+    if (msg.type === 'launch_claude' && sessionId && !msg.resume) {
+      msg.resume = sessionId;
     }
 
     // Remap outbound channelId to server-side value

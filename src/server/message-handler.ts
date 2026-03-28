@@ -40,7 +40,7 @@ export class MessageHandler {
   /** Returns the actual server-side channelId (may differ from msg.channelId on reconnect) */
   handleLaunch(ws: WebSocket, msg: any): string {
     const { channelId, resume, cwd, model, permissionMode, thinkingLevel } = msg;
-    console.log(`[launch] channelId=${channelId}, resume=${resume}, cwd=${cwd}`);
+    console.log(`[launch] channelId=${channelId}, resume=${resume}, cwd=${cwd}, permissionMode=${permissionMode}, model=${model}`);
 
     // Try to reattach to an existing running session.
     // 1. Exact channelId match (normal case)
@@ -52,7 +52,7 @@ export class MessageHandler {
 
     if (existing && existing.state !== "closed") {
       const serverChannelId = existing.channelId;
-      console.log(`[launch] reattaching to existing session serverChannelId=${serverChannelId}`);
+      console.log(`[launch] reattaching to existing session serverChannelId=${serverChannelId}, keeping existing permissionMode=${existing.permissionMode}`);
       this.sessionManager.attachWs(serverChannelId, ws);
 
       // Tell the shim to remap channelId if it changed after reconnect
@@ -80,14 +80,38 @@ export class MessageHandler {
             },
           },
         }));
+
+        // Notify webview to use existing session's permissionMode
+        setTimeout(() => {
+          ws.send(JSON.stringify({
+            type: "from-extension",
+            message: {
+              type: "request",
+              channelId: serverChannelId,
+              requestId: uuid(),
+              request: {
+                type: "set_permission_mode",
+                mode: existing.permissionMode,
+              },
+            },
+          }));
+        }, 100);
       }
       return serverChannelId;
     }
 
     // No existing session to reattach -- create a new one
+    // If resume with default permissionMode, use config default instead
+    const config = getConfig();
+    const effectivePermissionMode = (resume && permissionMode === "default")
+      ? config.defaults.permissionMode
+      : permissionMode;
+
+    console.log(`[launch] creating new session, resume=${resume}, webview permissionMode=${permissionMode}, effective=${effectivePermissionMode}`);
+
     const session = this.sessionManager.createSession(channelId, cwd, {
       model,
-      permissionMode,
+      permissionMode: effectivePermissionMode,
       resume,
       thinkingLevel,
     });
@@ -114,6 +138,25 @@ export class MessageHandler {
           },
         });
         console.log(`[launch] pushed update_state with config (${config.commands?.length || 0} commands) to webview`);
+
+        // If resume with effective permissionMode, notify webview
+        if (resume && effectivePermissionMode) {
+          setTimeout(() => {
+            console.log(`[launch] sending set_permission_mode to webview, mode=${effectivePermissionMode}`);
+            this.sessionManager.broadcastToSession(channelId, {
+              type: "from-extension",
+              message: {
+                type: "request",
+                channelId,
+                requestId: uuid(),
+                request: {
+                  type: "set_permission_mode",
+                  mode: effectivePermissionMode,
+                },
+              },
+            });
+          }, 100);
+        }
       }
     }).catch((err) => {
       console.error(`[launch] waitForClaudeConfig error:`, err);

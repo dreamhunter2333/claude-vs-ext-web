@@ -96,6 +96,19 @@ export class SessionManager {
         if (msg.response?.subtype === "success" && msg.response?.response?.commands) {
           session.claudeConfig = msg.response.response;
           console.log(`[claude:${channelId.slice(0, 8)}] initialized with ${session.claudeConfig.commands?.length || 0} commands`);
+
+          const keys = Object.keys(msg.response.response);
+          console.log(`[claude:${channelId.slice(0, 8)}] initialize response has ${keys.length} keys`);
+          for (const key of keys) {
+            console.log(`[claude:${channelId.slice(0, 8)}]   - ${key}`);
+          }
+
+          // Extract permissionMode from claude.exe response if available
+          if (msg.response.response.permission_mode) {
+            session.permissionMode = msg.response.response.permission_mode;
+            console.log(`[claude:${channelId.slice(0, 8)}] extracted permissionMode=${session.permissionMode}`);
+          }
+
           if (session._claudeConfigResolvers) {
             for (const resolve of session._claudeConfigResolvers) {
               resolve(session.claudeConfig);
@@ -252,9 +265,12 @@ export class SessionManager {
   }
 
   findRunningSessionByResumeId(resumeId: string): Session | undefined {
+    console.log(`[findRunningSessionByResumeId] looking for resumeId=${resumeId}`);
     for (const session of this.sessions.values()) {
+      console.log(`[findRunningSessionByResumeId] checking session channelId=${session.channelId}, resumeId=${session.resumeId}, state=${session.state}`);
       if (session.state !== "closed" && session.resumeId === resumeId) return session;
     }
+    console.log(`[findRunningSessionByResumeId] no match found`);
     return undefined;
   }
 
