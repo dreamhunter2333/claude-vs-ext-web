@@ -104,7 +104,22 @@ cp -r ~/.vscode/extensions/anthropic.claude-code-<VERSION> vendor/claude-code/
 
 > Replace `<VERSION>` with the latest version directory (e.g., `2.1.86-darwin-arm64`).
 
-**Option 2: From .vsix file**
+**Option 2: Download VSIX directly from VSCode**
+
+In VSCode extensions panel, right-click on Claude Code extension and select **Download Specific Version VSIX...**:
+
+<img src="readme-assets/download-vsix.png" alt="Download VSIX from VSCode" width="400"/>
+
+Then extract the downloaded `.vsix` file:
+
+```bash
+# Extract .vsix (it's a zip file)
+unzip claude-code.vsix -d temp-extract
+mv temp-extract/extension/* vendor/claude-code/
+rm -rf temp-extract
+```
+
+**Option 3: From .vsix file**
 
 ```bash
 # Extract .vsix (it's a zip file)

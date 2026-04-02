@@ -104,7 +104,22 @@ cp -r ~/.vscode/extensions/anthropic.claude-code-<VERSION> vendor/claude-code/
 
 > 将 `<VERSION>` 替换为最新版本目录名（如 `2.1.86-darwin-arm64`）。
 
-**方式 2：从 .vsix 文件**
+**方式 2：直接从 VSCode 下载 VSIX**
+
+在 VSCode 扩展面板中，右键点击 Claude Code 扩展，选择 **Download Specific Version VSIX...**：
+
+<img src="readme-assets/download-vsix.png" alt="从 VSCode 下载 VSIX" width="400"/>
+
+然后解压下载的 `.vsix` 文件：
+
+```bash
+# 解压 .vsix（本质是 zip 文件）
+unzip claude-code.vsix -d temp-extract
+mv temp-extract/extension/* vendor/claude-code/
+rm -rf temp-extract
+```
+
+**方式 3：从 .vsix 文件**
 
 ```bash
 # 解压 .vsix（本质是 zip 文件）
